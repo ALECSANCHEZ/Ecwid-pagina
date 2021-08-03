@@ -1,132 +1,255 @@
-class TreeNode {
-    constructor(value) {
-        this.x = 0;
-        this.y = 0;
 
-        this.value = value;
-
-        this.final = 0;
-        this.modifier = 0;
-
-        this.prevSibling = null;
-        this.children = [];
-    }
-
-    visit(func) {
-        func(this);
-        for (let i = 0; i < this.children.length; i++) {
-            this.children[i].visit(func);
-        }
-    }
-}
-
-class TreeRenderer {
-    constructor(dataRoot, svgNode, width = 1000, height = 100) {
-        // The root of the JavaScript object that represents the data
-        // that we'll be rendering.
-        this.dataRoot = dataRoot;
-
-        // The SVG DOM node that the renderer will insert elements into.
-        this.svgNode = svgNode;
-
-        this.width = width;
-        this.height = height;
-
-        this.nodeRoot = this.prepareData(this.dataRoot, 0, null);
-
-        this.firstPass(this.nodeRoot);
-        this.secondPass(this.nodeRoot, 0);
-        this.fixNodeConflicts(this.nodeRoot);
-        this.shiftTreeIntoFrame();
-    }
-
-    /*
-     * Build an intermediate form of the original data tree.  The nodes of
-     * this new tree will be instances of the TreeNode class.
-     */
-    prepareData(node, level, prevSibling) {
-        let treeNode = new TreeNode(node.value);
-        treeNode.x = level;
-        treeNode.prevSibling = prevSibling;
-
-        for (let i = 0; i < node.children.length; i++) {
-            treeNode.children.push(
-                this.prepareData(
-                    node.children[i],
-                    level + 1,
-                    i >= 1 ? treeNode.children[i - 1] : null
-                )
-            );
-        }
-        return treeNode;
-    }
-
-    /*
-     * Assign initial position values to every node based on how many
-     * prior siblings the current node has.
-     */
-    firstPass(node) {
-        for (let i = 0; i < node.children.length; i++) {
-            this.firstPass(node.children[i]);
-        }
-
-        if (node.prevSibling) {
-            node.y = node.prevSibling.y + NODE_SEP;
-        } else {
-            node.y = 0;
-        }
-
-        if (node.children.length == 1) {
-            node.modifier = node.y;
-        } else if (node.children.length >= 2) {
-            let minY = Infinity;
-            let maxY = -minY;
-            for (let i = 0; i < node.children.length; i++) {
-                minY = Math.min(minY, node.children[i].y);
-                maxY = Math.max(maxY, node.children[i].y);
+var treeData = [
+    {
+      "name": "Top Level",
+      "parent": "null",
+      "children": [
+        {
+          "name": "Level 2: A",
+          "parent": "Top Level",
+          "children": [
+            {
+              "name": "Son of A",
+              "parent": "Level 2: A",
+              "children":[
+                {
+                  "name": "Level 3:A",
+                  "parent": "Daughter of A"
+  
+                },
+                {
+                  "name": "son 3:A",
+                  "parent": "Daughter of A"
+  
+                },
+                {
+                  "name": "son g:A",
+                  "parent": "Daughter of A"
+  
+                }
+              ]
+            },
+            {
+              "name": "Daughter of A",
+              "parent": "Level 2: A",
+              "children":[
+                {
+                  "name": "Level 3:A",
+                  "parent": "Daughter of A"
+  
+                },
+                {
+                  "name": "son 3:A",
+                  "parent": "Daughter of A"
+  
+                },
+                {
+                  "name": "son g:A",
+                  "parent": "Daughter of A"
+  
+                }
+              ]
+            },
+            {
+              "name": "Daughter of A.1",
+              "parent": "Level 2: A",
+              "children":[
+                {
+                  "name": "Level 3:A",
+                  "parent": "Daughter of A.1"
+  
+                },
+                {
+                  "name": "son 3:A",
+                  "parent": "Daughter of A.1"
+  
+                },
+                {
+                  "name": "son g:A",
+                  "parent": "Daughter of A.1"
+  
+                }
+              ]
             }
-            node.modifier = node.y - (maxY - minY) / 2;
+          ]
+        },
+        {
+          "name": "Level 2: B",
+          "parent": "Top Level",
+          "children":[
+                {
+                  "name": "Level 3:A",
+                  "parent": "Daughter of A.1"
+  
+                },
+                {
+                  "name": "son 3:A",
+                  "parent": "Daughter of A.1"
+  
+                },
+                {
+                  "name": "son g:A",
+                  "parent": "Daughter of A.1"
+  
+                }
+              ]
+        },
+        {
+          "name": "Daughter of A",
+          "parent": "Level 2: A",
+          "children":[
+                {
+                  "name": "Level 3:A",
+                  "parent": "Daughter of A.1"
+  
+                }
+              ]
         }
+      ]
     }
+  ];
+  
+  
+ 
+  
+  // ************** Generate the tree diagram	 *****************
+  var dimensionScreen = screen.width /2
+  var margin = {top: 40, right: 900, bottom: 40, left: screen.width},
+      width = screen.width - margin.right - margin.left,
+      height = screen.height - margin.top - margin.bottom;
+      
+  var i = 0,
+      duration = 750,
+      root;
+  
+  var tree = d3.layout.tree()
+      .size([height, width]);
+  
+  var diagonal = d3.svg.diagonal()
+      .projection(function(d) { return [d.y, d.x*1.5]; });
+  
+  var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.right + margin.left)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ") rotate(90)");
+  
+  root = treeData[0];
+  root.x0 = height / 2;
+  root.y0 = 0;
+    
+  update(root);
+  
+  d3.select(self.frameElement).style("height", "500px");
+  
+  function update(source) {
+  
+    // Compute the new tree layout.
+    var nodes = tree.nodes(root).reverse(),
+        links = tree.links(nodes);
+  
+    // Normalize for fixed-depth.
+    nodes.forEach(function(d) { d.y = d.depth * 180; });
+  
+    // Update the nodes…
+    var node = svg.selectAll("g.node")
+        .data(nodes, function(d) { return d.id || (d.id = ++i); });
+  
+    // Enter any new nodes at the parent's previous position.
+    var nodeEnter = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ") rotate(270)"; })
+        .on("click", click);
 
-    /*
-     * Adjust the position of children such that they end up centered
-     * under their parent.
-     */
-    secondPass(node, modSum) {
-        node.final = node.y + modSum;
-        for (let i = 0; i < node.children.length; i++) {
-            this.secondPass(node.children[i], node.modifier + modSum);
-        }
+    nodeEnter.append("filter")
+    .attr("id", "image_user")
+    .attr("x", "0%")
+    .attr("y", "0%")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .append("feImage")
+    .attr("xlink:href", "https://cdn.pixabay.com/photo/2014/04/02/17/07/user-307993_960_720.png")
+  
+  
+  
+    nodeEnter.append("circle")
+        .attr("r", 1e-6)
+      .attr("filter", "url(#image_user)")
+        .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+  
+    //Here you can edit the name of the each node
+    nodeEnter.append("text")
+        .attr("x", -25) 
+        .attr("dy", "3em") 
+        .attr("text-anchor", function(d) { return d.children || d._children ? "start" : "start"; })
+        .text(function(d) { return d.name; })
+        .style("fill-opacity", 1e-6);
+  
+    // Transition nodes to their new position.
+    var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x*1.5 + ") rotate(270)"; });
+  
+    nodeUpdate.select("circle")
+        .attr("r", 10)
+        .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+  
+    nodeUpdate.select("text")
+        .style("fill-opacity", 1);
+  
+    // Transition exiting nodes to the parent's new position.
+    var nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ") rotate(270)"; })
+        .remove();
+  
+    nodeExit.select("circle")
+        .attr("r", 1e-6);
+  
+    nodeExit.select("text")
+        .style("fill-opacity", 1e-6);
+  
+    // Update the links…
+    var link = svg.selectAll("path.link")
+        .data(links, function(d) { return d.target.id; });
+  
+    // Enter any new links at the parent's previous position.
+    link.enter().insert("path", "g")
+        .attr("class", "link")
+        .attr("d", function(d) {
+          var o = {x: source.x0, y: source.y0};
+          return diagonal({source: o, target: o});
+        });
+  
+    // Transition links to their new position.
+    link.transition()
+        .duration(duration)
+        .attr("d", diagonal);
+  
+    // Transition exiting nodes to the parent's new position.
+    link.exit().transition()
+        .duration(duration)
+        .attr("d", function(d) {
+          var o = {x: source.x, y: source.y};
+          return diagonal({source: o, target: o});
+        })
+        .remove();
+  
+    // Stash the old positions for transition.
+    nodes.forEach(function(d) {
+      d.x0 = d.x*1.5;
+      d.y0 = d.y;
+    });
+  }
+  
+  // Toggle children on click.
+  function click(d) {
+    if (d.children) {
+      d._children = d.children;
+      d.children = null;
+    } else {
+      d.children = d._children;
+      d._children = null;
     }
-
-    /*
-     * Work from the end of the tree back toward the beginning, fixing any
-     * subtree overlap as we recurse through the tree.
-     */
-    fixNodeConflicts(node) {
-        for (let i = 0; i < node.children.length; i++) {
-            this.fixNodeConflicts(node.children[i]);
-        }
-
-        for (let i = 0; i < node.children.length - 1; i++) {
-            // Get the bottom-most contour position of the current node
-            let botContour = -Infinity;
-            node.children[i].visit(
-                node => (botContour = Math.max(botContour, node.final))
-            );
-
-            // Get the topmost contour position of the node underneath the current one
-            let topContour = Infinity;
-            node.children[i + 1].visit(
-                node => (topContour = Math.min(topContour, node.final))
-            );
-
-            if (botContour >= topContour) {
-                node.children[i + 1].visit(
-                    node => (node.final += botContour - topContour + NODE_SEP)
-                );
-            }
-        }
-    }
-}
+    update(d);
+  }
