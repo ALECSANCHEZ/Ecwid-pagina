@@ -114,7 +114,7 @@ var treeData = [
   
   // ************** Generate the tree diagram	 *****************
   var dimensionScreen = screen.width /2
-  var margin = {top: 40, right: 900, bottom: 40, left: screen.width},
+  var margin = {top: 40, right: 20, bottom: 40, left: 1200},
       width = screen.width - margin.right - margin.left,
       height = screen.height - margin.top - margin.bottom;
       
@@ -128,7 +128,7 @@ var treeData = [
   var diagonal = d3.svg.diagonal()
       .projection(function(d) { return [d.y, d.x*1.5]; });
   
-  var svg = d3.select("body").append("svg")
+  var svg = d3.select(".tree").append("svg")
       .attr("width", width + margin.right + margin.left)
       .attr("height", height + margin.top + margin.bottom)
     .append("g")
